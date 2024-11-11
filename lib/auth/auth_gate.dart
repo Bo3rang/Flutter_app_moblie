@@ -10,17 +10,20 @@ class AuthGate extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: StreamBuilder(
+      body: StreamBuilder<User?>(
         stream: FirebaseAuth.instance.authStateChanges(), 
         builder: (context, snapshot){
           if(snapshot.hasData){
-            return FeedScreen(currentUserId: snapshot.data!.uid);
+            return FeedScreen(
+              currentUserId: snapshot.data!.uid, 
+              profileUserId: snapshot.data!.uid,
+            );
           }
           else{
             return const LoginOrRegister();
           }
         },
-      )
+      ),
     );
   }
 }

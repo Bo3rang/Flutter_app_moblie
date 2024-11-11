@@ -1,10 +1,10 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-
 import 'profile_screen.dart';  // Import ProfileScreen để điều hướng
 
 class SearchScreen extends StatefulWidget {
-  const SearchScreen({super.key});
+  final String currentUserId; // Thêm tham số currentUserId để truyền vào ProfileScreen
+  const SearchScreen({super.key, required this.currentUserId});
 
   @override
   State<SearchScreen> createState() => _SearchScreenState();
@@ -12,7 +12,7 @@ class SearchScreen extends StatefulWidget {
 
 class _SearchScreenState extends State<SearchScreen> {
   final TextEditingController _controller = TextEditingController();
-  List<Map<String, dynamic>> _userNames = [];  // Lưu trữ cả name và userId
+  List<Map<String, dynamic>> _userNames = [];  // Lưu trữ cả name, avatarUrl và userId
   List<Map<String, dynamic>> _filteredUserNames = [];
 
   // Hàm tìm kiếm người dùng trong Firestore
@@ -36,6 +36,7 @@ class _SearchScreenState extends State<SearchScreen> {
       users.add({
         'name': doc['name'],
         'userId': doc.id, // Lưu trữ userId
+        'avatarUrl': doc['avatarUrl'] ?? 'https://via.placeholder.com/150', // Dự phòng avatar nếu không có
       });
     }
 
@@ -58,6 +59,7 @@ class _SearchScreenState extends State<SearchScreen> {
       users.add({
         'name': doc['name'],
         'userId': doc.id, // Lưu trữ userId
+        'avatarUrl': doc['avatarUrl'] ?? 'https://via.placeholder.com/150', // Dự phòng avatar nếu không có
       });
     }
 
@@ -107,13 +109,19 @@ class _SearchScreenState extends State<SearchScreen> {
                       itemCount: _filteredUserNames.length,
                       itemBuilder: (context, index) {
                         return ListTile(
+                          leading: CircleAvatar(
+                            radius: 25,
+                            backgroundImage: NetworkImage(_filteredUserNames[index]['avatarUrl']), // Hiển thị ảnh đại diện
+                          ),
                           title: Text(_filteredUserNames[index]['name']),
                           onTap: () {
+                            // Điều hướng đến trang ProfileScreen của người được chọn
                             Navigator.push(
                               context,
                               MaterialPageRoute(
                                 builder: (context) => ProfileScreen(
-                                  currentUserId: _filteredUserNames[index]['userId'],  // Truyền userId vào ProfileScreen
+                                  currentUserId: widget.currentUserId,  // Truyền currentUserId vào ProfileScreen
+                                  profileUserId: _filteredUserNames[index]['userId'],  // Truyền userId của người được chọn
                                 ),
                               ),
                             );

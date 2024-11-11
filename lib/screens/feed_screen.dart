@@ -7,16 +7,16 @@ import 'notification_screen.dart';
 import 'search_screen.dart';
 
 class FeedScreen extends StatefulWidget {
-  
   final String currentUserId;
-  const FeedScreen({super.key, required this.currentUserId});
+  final String profileUserId; // Thêm profileUserId để truyền vào ProfileScreen
+
+  const FeedScreen({super.key, required this.currentUserId, required this.profileUserId});
 
   @override
   State<FeedScreen> createState() => _FeedScreenState();
 }
 
 class _FeedScreenState extends State<FeedScreen> {
-
   int _selectedTab = 0;
 
   @override
@@ -24,25 +24,31 @@ class _FeedScreenState extends State<FeedScreen> {
     return Scaffold(
       backgroundColor: Colors.blue,
       body: [
+        // Truyền currentUserId vào HomeScreen nếu cần
         const HomeScreen(),
-        const SearchScreen(),
-        const NotificationScreen(),
-        // Truyền currentUserId vào ProfileScreen
-        ProfileScreen(currentUserId: widget.currentUserId),
+
+        // Truyền currentUserId vào SearchScreen
+        SearchScreen(currentUserId: widget.currentUserId),
+
+        const NotificationScreen(), // Không cần truyền currentUserId vào đây
+
+        // Truyền currentUserId và profileUserId vào ProfileScreen
+        ProfileScreen(currentUserId: widget.currentUserId, profileUserId: widget.profileUserId),
       ].elementAt(_selectedTab),
+      
       bottomNavigationBar: CupertinoTabBar(
-        onTap: (Index){
+        onTap: (index) {
           setState(() {
-            _selectedTab = Index;
+            _selectedTab = index;
           });
-        }, 
+        },
         activeColor: Colors.blue[400],
         currentIndex: _selectedTab,
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.home)),
           BottomNavigationBarItem(icon: Icon(Icons.search)),
           BottomNavigationBarItem(icon: Icon(Icons.accessibility)),
-          BottomNavigationBarItem(icon: Icon(Icons.person)),  
+          BottomNavigationBarItem(icon: Icon(Icons.person)),
         ],
       ),
     );

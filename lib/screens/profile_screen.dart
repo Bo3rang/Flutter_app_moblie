@@ -4,7 +4,12 @@ import 'package:firebase_auth/firebase_auth.dart';
 
 class ProfileScreen extends StatefulWidget {
   final String currentUserId;
-  const ProfileScreen({super.key, required this.currentUserId});
+  final String profileUserId;
+  const ProfileScreen({
+    super.key, 
+    required this.currentUserId, 
+    required this.profileUserId
+  });
 
   @override
   State<ProfileScreen> createState() => _ProfileScreenState();
@@ -26,9 +31,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
     _loadUserData();
   }
 
+  // Hàm tải thông tin người dùng từ Firestore
   Future<void> _loadUserData() async {
     try {
-      var doc = await FirebaseFirestore.instance.collection('Users').doc(widget.currentUserId).get();
+      var doc = await FirebaseFirestore.instance.collection('Users').doc(widget.profileUserId).get();
       if (doc.exists) {
         setState(() {
           name = doc['name'] ?? 'No name';
@@ -55,8 +61,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
       await FirebaseAuth.instance.signOut();
       Navigator.pushReplacementNamed(context, '/login');
     } catch (e) {
-      print("Lỗi đăng xuất: $e"); 
+      print("Lỗi đăng xuất: $e");
     }
+  }
+
+  // Hàm chỉnh sửa profile (dành cho người dùng của mình)
+  void _editProfile() {
+    Navigator.pushNamed(context, '/editProfile');
+  }
+
+  // Hàm follow người khác
+  void _followUser() {
+    print("Follow user ${widget.profileUserId}");
   }
 
   @override
@@ -73,7 +89,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ],
       ),
       body: isLoading
-          ? const Center(child: CircularProgressIndicator())
+          ? const Center(child: CircularProgressIndicator())  // Hiển thị loading khi đang tải dữ liệu
           : Column(
               children: [
                 Expanded(flex: 2, child: _TopPortion(avatarUrl: avatarUrl)),
@@ -91,22 +107,33 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               ?.copyWith(fontWeight: FontWeight.bold),
                         ),
                         Text(email, style: Theme.of(context).textTheme.bodyMedium),
-                        const SizedBox(height: 16),
+                        const SizedBox(height: 10),
                         Text(bio, style: Theme.of(context).textTheme.bodyMedium),
                         const SizedBox(height: 16),
                         Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            FloatingActionButton.extended(
-                              onPressed: () {},
-                              heroTag: 'follow',
-                              elevation: 0,
-                              label: const Text("Follow"),
-                              icon: const Icon(Icons.person_add_alt_1),
-                            ),
+                            // Thay đổi nút nếu là profile của mình hoặc người khác
+                            widget.currentUserId == widget.profileUserId
+                                ? FloatingActionButton.extended(
+                                    onPressed: _editProfile,
+                                    heroTag: 'editProfile',
+                                    elevation: 0,
+                                    label: const Text("Edit Profile"),
+                                    icon: const Icon(Icons.edit),
+                                  )
+                                : FloatingActionButton.extended(
+                                    onPressed: _followUser,
+                                    heroTag: 'follow',
+                                    elevation: 0,
+                                    label: const Text("Follow"),
+                                    icon: const Icon(Icons.person_add_alt_1),
+                                  ),
                             const SizedBox(width: 16.0),
                             FloatingActionButton.extended(
-                              onPressed: () {},
+                              onPressed: () {
+                                // Logic message user here
+                              },
                               heroTag: 'message',
                               elevation: 0,
                               backgroundColor: Colors.red,
@@ -219,7 +246,20 @@ class _TopPortion extends StatelessWidget {
                     shape: BoxShape.circle,
                     image: DecorationImage(
                         fit: BoxFit.cover,
-                        image: NetworkImage(avatarUrl)),
+                        image: NetworkImage(avatarUrl)),  // Dùng avatar URL từ Firestore hoặc dự phòng
+                  ),
+                ),
+                Positioned(
+                  bottom: 0,
+                  right: 0,
+                  child: CircleAvatar(
+                    radius: 20,
+                    backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+                    child: Container(
+                      margin: const EdgeInsets.all(8.0),
+                      decoration: const BoxDecoration(
+                          color: Colors.green, shape: BoxShape.circle),
+                    ),
                   ),
                 ),
               ],
