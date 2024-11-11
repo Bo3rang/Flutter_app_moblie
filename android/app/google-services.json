@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "908199110929",
+    "project_id": "login-logout-dbeb8",
+    "storage_bucket": "login-logout-dbeb8.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:908199110929:android:8cd666c20a85c5827144b0",
+        "android_client_info": {
+          "package_name": "com.example.test_1"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAcKpeyhd-1EtV06Ap7E0hLdYC4E9Z6jr8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
