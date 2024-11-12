@@ -1,9 +1,9 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'profile_screen.dart';  // Import ProfileScreen để điều hướng
+import 'profile_screen.dart';
 
 class SearchScreen extends StatefulWidget {
-  final String currentUserId; // Thêm tham số currentUserId để truyền vào ProfileScreen
+  final String currentUserId;
   const SearchScreen({super.key, required this.currentUserId});
 
   @override
@@ -12,13 +12,12 @@ class SearchScreen extends StatefulWidget {
 
 class _SearchScreenState extends State<SearchScreen> {
   final TextEditingController _controller = TextEditingController();
-  List<Map<String, dynamic>> _userNames = [];  // Lưu trữ cả name, avatarUrl và userId
+  List<Map<String, dynamic>> _userNames = [];
   List<Map<String, dynamic>> _filteredUserNames = [];
 
   // Hàm tìm kiếm người dùng trong Firestore
   Future<void> _searchUser(String query) async {
     if (query.isEmpty) {
-      // Nếu không có gì để tìm, hiển thị tất cả người dùng
       setState(() {
         _filteredUserNames = _userNames;
       });
@@ -26,17 +25,17 @@ class _SearchScreenState extends State<SearchScreen> {
     }
 
     var querySnapshot = await FirebaseFirestore.instance
-        .collection('Users')  // Tên collection của bạn trong Firestore
-        .where('name', isGreaterThanOrEqualTo: query) // Tìm kiếm từ khóa bắt đầu với query
-        .where('name', isLessThanOrEqualTo: '$query\uf8ff') // Tìm kiếm với phạm vi khớp tên
+        .collection('Users')
+        .where('name', isGreaterThanOrEqualTo: query)
+        .where('name', isLessThanOrEqualTo: '$query\uf8ff')
         .get();
 
     List<Map<String, dynamic>> users = [];
     for (var doc in querySnapshot.docs) {
       users.add({
         'name': doc['name'],
-        'userId': doc.id, // Lưu trữ userId
-        'avatarUrl': doc['avatarUrl'] ?? 'https://via.placeholder.com/150', // Dự phòng avatar nếu không có
+        'userId': doc.id,
+        'avatarUrl': doc['avatarUrl'] ?? 'https://via.placeholder.com/150',
       });
     }
 
@@ -58,8 +57,8 @@ class _SearchScreenState extends State<SearchScreen> {
     for (var doc in querySnapshot.docs) {
       users.add({
         'name': doc['name'],
-        'userId': doc.id, // Lưu trữ userId
-        'avatarUrl': doc['avatarUrl'] ?? 'https://via.placeholder.com/150', // Dự phòng avatar nếu không có
+        'userId': doc.id,
+        'avatarUrl': doc['avatarUrl'] ?? 'https://via.placeholder.com/150',
       });
     }
 
@@ -84,7 +83,7 @@ class _SearchScreenState extends State<SearchScreen> {
                 Expanded(
                   child: TextField(
                     controller: _controller,
-                    onChanged: (query) => _searchUser(query),  // Gọi hàm khi người dùng nhập
+                    onChanged: (query) => _searchUser(query),
                     decoration: const InputDecoration(
                       labelText: 'Tìm kiếm người dùng',
                       prefixIcon: Icon(Icons.search),
@@ -95,7 +94,6 @@ class _SearchScreenState extends State<SearchScreen> {
                 IconButton(
                   icon: const Icon(Icons.search),
                   onPressed: () {
-                    // Khi nhấn nút tìm kiếm, sẽ gọi _searchUser với giá trị trong _controller
                     _searchUser(_controller.text);
                   },
                 ),
@@ -111,17 +109,16 @@ class _SearchScreenState extends State<SearchScreen> {
                         return ListTile(
                           leading: CircleAvatar(
                             radius: 25,
-                            backgroundImage: NetworkImage(_filteredUserNames[index]['avatarUrl']), // Hiển thị ảnh đại diện
+                            backgroundImage: NetworkImage(_filteredUserNames[index]['avatarUrl']),
                           ),
                           title: Text(_filteredUserNames[index]['name']),
                           onTap: () {
-                            // Điều hướng đến trang ProfileScreen của người được chọn
                             Navigator.push(
                               context,
                               MaterialPageRoute(
                                 builder: (context) => ProfileScreen(
-                                  currentUserId: widget.currentUserId,  // Truyền currentUserId vào ProfileScreen
-                                  profileUserId: _filteredUserNames[index]['userId'],  // Truyền userId của người được chọn
+                                  currentUserId: widget.currentUserId,
+                                  profileUserId: _filteredUserNames[index]['userId'],
                                 ),
                               ),
                             );

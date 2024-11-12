@@ -27,23 +27,23 @@ class RegisterScreen extends StatelessWidget {
           _emailController.text,
           _passwordController.text,
           _nameController.text,
-          _avatarUrlController.text,  // Chuyển avatar URL vào
-          _bioController.text,         // Chuyển tiểu sử vào
+          _avatarUrlController.text,
+          _bioController.text,
         );
       } catch (e) {
         showDialog(
           context: context,
           builder: ((context) => AlertDialog(
-                title: Text(e.toString()),
-              )),
+            title: Text(e.toString()),
+          )),
         );
       }
     } else {
       showDialog(
           context: context,
           builder: ((context) => const AlertDialog(
-                title: Text("Password don't match!"),
-              )));
+            title: Text("Password don't match!"),
+          )));
     }
   }
 

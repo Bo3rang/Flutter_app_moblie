@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+
+import '../auth/auth_service.dart';
 
 class ProfileScreen extends StatefulWidget {
   final String currentUserId;
@@ -24,11 +26,31 @@ class _ProfileScreenState extends State<ProfileScreen> {
   int followers = 0;
   int following = 0;
   bool isLoading = true;
+  bool isFollowing = false;
 
   @override
   void initState() {
     super.initState();
-    _loadUserData();
+    _loadUserData(); // Tải dữ liệu khi khởi tạo trang
+    _checkIfFollowing();
+  }
+
+  // Hàm tải lại thông tin người dùng khi quay lại trang
+  Future<void> _reloadData() async {
+    setState(() {
+      isLoading = true;
+    });
+    await _loadUserData();
+    await _checkIfFollowing();
+  }
+
+  Future<void> _logout() async {
+    try {
+      await FirebaseAuth.instance.signOut();
+      Navigator.pushReplacementNamed(context, '/login');
+    } catch (e) {
+      print("Lỗi đăng xuất: $e");
+    }
   }
 
   // Hàm tải thông tin người dùng từ Firestore
@@ -55,24 +77,41 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
-  // Hàm đăng xuất
-  Future<void> _logout() async {
+  // Kiểm tra xem người dùng đã follow chưa
+  Future<void> _checkIfFollowing() async {
     try {
-      await FirebaseAuth.instance.signOut();
-      Navigator.pushReplacementNamed(context, '/login');
+      DocumentSnapshot snapshot = await FirebaseFirestore.instance
+          .collection('Following')
+          .doc(widget.currentUserId)
+          .collection('following')
+          .doc(widget.profileUserId)
+          .get();
+      setState(() {
+        isFollowing = snapshot.exists;
+      });
     } catch (e) {
-      print("Lỗi đăng xuất: $e");
+      print("Lỗi khi kiểm tra follow: $e");
     }
   }
 
-  // Hàm chỉnh sửa profile (dành cho người dùng của mình)
-  void _editProfile() {
-    Navigator.pushNamed(context, '/editProfile');
+  // Hàm follow người khác
+  void _followUser() async {
+    await AuthService().followUser(widget.currentUserId, widget.profileUserId);
+    setState(() {
+      isFollowing = true;
+      followers++; // Tăng followers trên giao diện
+    });
+    _reloadData(); // Tải lại dữ liệu sau khi follow
   }
 
-  // Hàm follow người khác
-  void _followUser() {
-    print("Follow user ${widget.profileUserId}");
+  // Hàm unfollow người khác
+  void _unfollowUser() async {
+    await AuthService().unfollowUser(widget.currentUserId, widget.profileUserId);
+    setState(() {
+      isFollowing = false;
+      followers--; // Giảm followers trên giao diện
+    });
+    _reloadData(); // Tải lại dữ liệu sau khi unfollow
   }
 
   @override
@@ -89,10 +128,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ],
       ),
       body: isLoading
-          ? const Center(child: CircularProgressIndicator())  // Hiển thị loading khi đang tải dữ liệu
-          : Column(
-              children: [
-                Expanded(flex: 2, child: _TopPortion(avatarUrl: avatarUrl)),
+        ? const Center(child: CircularProgressIndicator())
+        : Column(
+            children: [
+              Expanded(flex: 2, child: _TopPortion(avatarUrl: avatarUrl)),
                 Expanded(
                   flex: 3,
                   child: Padding(
@@ -101,10 +140,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       children: [
                         Text(
                           name,
-                          style: Theme.of(context)
-                              .textTheme
-                              .titleLarge
-                              ?.copyWith(fontWeight: FontWeight.bold),
+                          style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
                         ),
                         Text(email, style: Theme.of(context).textTheme.bodyMedium),
                         const SizedBox(height: 10),
@@ -113,43 +149,44 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            // Thay đổi nút nếu là profile của mình hoặc người khác
                             widget.currentUserId == widget.profileUserId
-                                ? FloatingActionButton.extended(
-                                    onPressed: _editProfile,
-                                    heroTag: 'editProfile',
-                                    elevation: 0,
-                                    label: const Text("Edit Profile"),
-                                    icon: const Icon(Icons.edit),
-                                  )
-                                : FloatingActionButton.extended(
-                                    onPressed: _followUser,
-                                    heroTag: 'follow',
-                                    elevation: 0,
-                                    label: const Text("Follow"),
-                                    icon: const Icon(Icons.person_add_alt_1),
-                                  ),
-                            const SizedBox(width: 16.0),
-                            FloatingActionButton.extended(
-                              onPressed: () {
-                                // Logic message user here
-                              },
-                              heroTag: 'message',
-                              elevation: 0,
-                              backgroundColor: Colors.red,
-                              label: const Text("Message"),
-                              icon: const Icon(Icons.message_rounded),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 16),
-                        _ProfileInfoRow(posts, followers, following),
-                      ],
+                              ? FloatingActionButton.extended(
+                                onPressed: (){},
+                                heroTag: 'editProfile',
+                                elevation: 0,
+                                label: const Text("Edit Profile"),
+                                icon: const Icon(Icons.edit),
+                              )
+                              : FloatingActionButton.extended(
+                                onPressed: isFollowing ? _unfollowUser : _followUser,
+                                heroTag: 'follow',
+                                elevation: 0,
+                                label: Text(isFollowing ? "Unfollow" : "Follow"),
+                                icon: Icon(isFollowing ? Icons.person_remove : Icons.person_add_alt_1),
+                              ),
+                              const SizedBox(width: 16.0),
+                              FloatingActionButton.extended(
+                                onPressed: () {},
+                                heroTag: 'message',
+                                elevation: 0,
+                                backgroundColor: Colors.red,
+                                label: const Text("Message"),
+                                icon: const Icon(Icons.message_rounded),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 16),
+                          _ProfileInfoRow(
+                            posts: posts, 
+                            followers: followers, 
+                            following: following
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
                 ),
               ],
-            ),
+          ),
     );
   }
 }
@@ -159,7 +196,11 @@ class _ProfileInfoRow extends StatelessWidget {
   final int followers;
   final int following;
 
-  const _ProfileInfoRow(this.posts, this.followers, this.following);
+  const _ProfileInfoRow({
+    required this.posts, 
+    required this.followers, 
+    required this.following,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -221,7 +262,7 @@ class _TopPortion extends StatelessWidget {
       fit: StackFit.expand,
       children: [
         Container(
-          margin: const EdgeInsets.only(bottom: 50),
+          margin: const EdgeInsets.only(bottom: 70),
           decoration: const BoxDecoration(
               gradient: LinearGradient(
                   begin: Alignment.bottomCenter,
@@ -245,21 +286,8 @@ class _TopPortion extends StatelessWidget {
                     color: Colors.black,
                     shape: BoxShape.circle,
                     image: DecorationImage(
-                        fit: BoxFit.cover,
-                        image: NetworkImage(avatarUrl)),  // Dùng avatar URL từ Firestore hoặc dự phòng
-                  ),
-                ),
-                Positioned(
-                  bottom: 0,
-                  right: 0,
-                  child: CircleAvatar(
-                    radius: 20,
-                    backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-                    child: Container(
-                      margin: const EdgeInsets.all(8.0),
-                      decoration: const BoxDecoration(
-                          color: Colors.green, shape: BoxShape.circle),
-                    ),
+                      fit: BoxFit.cover,
+                      image: NetworkImage(avatarUrl)),
                   ),
                 ),
               ],

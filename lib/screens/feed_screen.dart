@@ -8,7 +8,7 @@ import 'search_screen.dart';
 
 class FeedScreen extends StatefulWidget {
   final String currentUserId;
-  final String profileUserId; // Thêm profileUserId để truyền vào ProfileScreen
+  final String profileUserId;
 
   const FeedScreen({super.key, required this.currentUserId, required this.profileUserId});
 
@@ -24,16 +24,13 @@ class _FeedScreenState extends State<FeedScreen> {
     return Scaffold(
       backgroundColor: Colors.blue,
       body: [
-        // Truyền currentUserId vào HomeScreen nếu cần
         const HomeScreen(),
-
-        // Truyền currentUserId vào SearchScreen
         SearchScreen(currentUserId: widget.currentUserId),
-
-        const NotificationScreen(), // Không cần truyền currentUserId vào đây
-
-        // Truyền currentUserId và profileUserId vào ProfileScreen
-        ProfileScreen(currentUserId: widget.currentUserId, profileUserId: widget.profileUserId),
+        const NotificationScreen(),
+        ProfileScreen(
+          currentUserId: widget.currentUserId, 
+          profileUserId: widget.profileUserId
+        ),
       ].elementAt(_selectedTab),
       
       bottomNavigationBar: CupertinoTabBar(

@@ -54,4 +54,49 @@ class AuthService {
   Future<void> signOut() async {
     return await auth.signOut();
   }
+
+  // Thêm người vào danh sách followers
+  Future<void> followUser(String currentUserId, String profileUserId) async {
+    try {
+      // Thêm người theo dõi
+      await _firestore.collection('Followers').doc(profileUserId).collection('followers').doc(currentUserId).set({
+        'userId': currentUserId,
+        'createdAt': Timestamp.now(),
+      });
+
+      // Thêm người đang theo dõi vào danh sách following của người dùng
+      await _firestore.collection('Following').doc(currentUserId).collection('following').doc(profileUserId).set({
+        'userId': profileUserId,
+        'createdAt': Timestamp.now(),
+      });
+    } catch (e) {
+      print("Lỗi khi follow: $e");
+    }
+  }
+
+  // Xóa người khỏi danh sách followers
+  Future<void> unfollowUser(String currentUserId, String profileUserId) async {
+    try {
+      // Xóa người khỏi danh sách followers
+      await _firestore.collection('Followers').doc(profileUserId).collection('followers').doc(currentUserId).delete();
+
+      // Xóa người khỏi danh sách following
+      await _firestore.collection('Following').doc(currentUserId).collection('following').doc(profileUserId).delete();
+    } catch (e) {
+      print("Lỗi khi unfollow: $e");
+    }
+  }
+
+  // Lấy số lượng followers
+  Future<int> followersNum(String userId) async {
+    QuerySnapshot followersSnapshot = await _firestore.collection('Followers').doc(userId).collection('followers').get();
+    return followersSnapshot.docs.length;
+  }
+
+  // Lấy số lượng following
+  Future<int> followingNum(String userId) async {
+    QuerySnapshot followingSnapshot = await _firestore.collection('Following').doc(userId).collection('following').get();
+    return followingSnapshot.docs.length;
+  }
 }
+
