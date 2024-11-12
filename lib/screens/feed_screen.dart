@@ -1,7 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
-import 'profile_screen.dart';
+import 'profile/profile_screen.dart';
 import 'home_screen.dart';
 import 'notification_screen.dart';
 import 'search_screen.dart';
@@ -44,7 +44,7 @@ class _FeedScreenState extends State<FeedScreen> {
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.home)),
           BottomNavigationBarItem(icon: Icon(Icons.search)),
-          BottomNavigationBarItem(icon: Icon(Icons.accessibility)),
+          BottomNavigationBarItem(icon: Icon(Icons.notifications)),
           BottomNavigationBarItem(icon: Icon(Icons.person)),
         ],
       ),

@@ -17,6 +17,7 @@ class RegisterScreen extends StatelessWidget {
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _confirmpasswordController = TextEditingController();
   final TextEditingController _avatarUrlController = TextEditingController();
+  final TextEditingController _coverUrlController = TextEditingController();
   final TextEditingController _bioController = TextEditingController();
 
   void Register(BuildContext context) async {
@@ -29,6 +30,7 @@ class RegisterScreen extends StatelessWidget {
           _nameController.text,
           _avatarUrlController.text,
           _bioController.text,
+          _coverUrlController.text
         );
       } catch (e) {
         showDialog(

@@ -24,6 +24,7 @@ class AuthService {
     String password,
     String name,
     String avatarUrl,
+    String coverUrl,
     String bio) async {
     try {
       UserCredential userCredential = await auth.createUserWithEmailAndPassword(
@@ -40,6 +41,7 @@ class AuthService {
           'name': name,
           'email': email,
           'avatarUrl': avatarUrl,
+          'coverUrl': coverUrl,
           'bio': bio,
           'createdAt': Timestamp.now(),
         });

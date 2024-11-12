@@ -1,6 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'profile_screen.dart';
+import 'profile/profile_screen.dart';
 
 class SearchScreen extends StatefulWidget {
   final String currentUserId;
