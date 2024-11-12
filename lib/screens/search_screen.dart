@@ -4,7 +4,10 @@ import 'profile/profile_screen.dart';
 
 class SearchScreen extends StatefulWidget {
   final String currentUserId;
-  const SearchScreen({super.key, required this.currentUserId});
+  const SearchScreen({
+    super.key, 
+    required this.currentUserId
+  });
 
   @override
   State<SearchScreen> createState() => _SearchScreenState();

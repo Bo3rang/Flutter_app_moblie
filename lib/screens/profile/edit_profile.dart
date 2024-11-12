@@ -6,14 +6,14 @@ class EditProfileScreen extends StatefulWidget {
   const EditProfileScreen({super.key});
 
   @override
-  _EditProfileScreenState createState() => _EditProfileScreenState();
+  State<EditProfileScreen> createState() => _EditProfileScreenState();
 }
 
 class _EditProfileScreenState extends State<EditProfileScreen> {
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _bioController = TextEditingController();
-  String? _profilePictureUrl;
+  String? _avatarUrl;
   bool _isLoading = false;
 
   @override
@@ -33,7 +33,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       Map<String, dynamic> userData = userSnapshot.data() as Map<String, dynamic>;
       _nameController.text = userData['name'] ?? '';
       _bioController.text = userData['bio'] ?? '';
-      _profilePictureUrl = userData['profilePictureUrl'];
+      _avatarUrl = userData['avatarUrl'];
     }
     setState(() {
       _isLoading = false;
@@ -50,10 +50,12 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         'name': _nameController.text,
         'bio': _bioController.text,
       });
+
+      // Sau khi lưu thành công, quay lại trang Profile và tải lại dữ liệu
       setState(() {
         _isLoading = false;
       });
-      Navigator.of(context).pop();
+      Navigator.of(context).pop(true); // Gửi giá trị true để xác nhận có cập nhật
     }
   }
 
@@ -79,7 +81,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   children: [
                     CircleAvatar(
                       radius: 50,
-                      backgroundImage: NetworkImage(_profilePictureUrl ?? 'https://via.placeholder.com/150'),
+                      backgroundImage: NetworkImage(_avatarUrl ?? 'https://via.placeholder.com/150'),
                     ),
                     const SizedBox(height: 20),
                     TextFormField(

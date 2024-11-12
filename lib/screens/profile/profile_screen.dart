@@ -14,7 +14,7 @@ class ProfileScreen extends StatefulWidget {
   });
 
   @override
-  _ProfileScreenState createState() => _ProfileScreenState();
+  State<ProfileScreen> createState() => _ProfileScreenState();
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
@@ -141,6 +141,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
     Navigator.of(context).pushReplacementNamed('/login');
   }
 
+  // Cập nhật dữ liệu khi quay lại từ EditProfileScreen
+  void _refreshProfile() {
+    _getUserData();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -243,13 +248,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   const SizedBox(height: 20),
                   if (isCurrentUser)
                     ElevatedButton.icon(
-                      onPressed: () {
-                        Navigator.push(
+                      onPressed: () async {
+                        // Chuyển đến trang EditProfile và cập nhật khi quay lại
+                        final updated = await Navigator.push(
                           context,
                           MaterialPageRoute(
                             builder: (context) => const EditProfileScreen(),
                           ),
                         );
+                        if (updated != null && updated) {
+                          _refreshProfile(); // Cập nhật lại dữ liệu khi quay lại từ trang EditProfile
+                        }
                       },
                       icon: const Icon(Icons.edit),
                       label: const Text('Edit Profile'),
