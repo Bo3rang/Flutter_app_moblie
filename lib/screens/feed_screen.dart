@@ -10,7 +10,8 @@ class FeedScreen extends StatefulWidget {
   final String currentUserId;
   final String profileUserId;
 
-  const FeedScreen({super.key, required this.currentUserId, required this.profileUserId});
+  const FeedScreen(
+      {super.key, required this.currentUserId, required this.profileUserId});
 
   @override
   State<FeedScreen> createState() => _FeedScreenState();
@@ -28,11 +29,9 @@ class _FeedScreenState extends State<FeedScreen> {
         SearchScreen(currentUserId: widget.currentUserId),
         const NotificationScreen(),
         ProfileScreen(
-          currentUserId: widget.currentUserId, 
-          profileUserId: widget.profileUserId
-        ),
+            currentUserId: widget.currentUserId,
+            profileUserId: widget.profileUserId),
       ].elementAt(_selectedTab),
-      
       bottomNavigationBar: CupertinoTabBar(
         onTap: (index) {
           setState(() {

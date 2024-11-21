@@ -6,7 +6,8 @@ class AuthService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
   // Đăng nhập
-  Future<UserCredential> signInWithEmailPassword(String email, String password) async {
+  Future<UserCredential> signInWithEmailPassword(
+      String email, String password) async {
     try {
       UserCredential userCredential = await auth.signInWithEmailAndPassword(
         email: email,
@@ -19,13 +20,8 @@ class AuthService {
   }
 
   // Đăng ký tài khoản mới
-  Future<UserCredential> signUpWithEmailPassword(
-    String email,
-    String password,
-    String name,
-    String avatarUrl,
-    String coverUrl,
-    String bio) async {
+  Future<UserCredential> signUpWithEmailPassword(String email, String password,
+      String name, String avatarUrl, String coverUrl, String bio) async {
     try {
       UserCredential userCredential = await auth.createUserWithEmailAndPassword(
         email: email,
@@ -57,48 +53,63 @@ class AuthService {
     return await auth.signOut();
   }
 
-  // Thêm người vào danh sách followers
-  Future<void> followUser(String currentUserId, String profileUserId) async {
+  // Hàm follow và unfollow
+  Future<void> followUser(String currentUserId, String targetUserId) async {
     try {
-      // Thêm người theo dõi
-      await _firestore.collection('Followers').doc(profileUserId).collection('followers').doc(currentUserId).set({
-        'userId': currentUserId,
-        'createdAt': Timestamp.now(),
+      DocumentReference currentUserDoc =
+          _firestore.collection("Users").doc(currentUserId);
+      DocumentReference targetUserDoc =
+          _firestore.collection("Users").doc(targetUserId);
+
+      // Bắt đầu batch để thực hiện các thao tác Firestore cùng lúc
+      WriteBatch batch = _firestore.batch();
+
+      // Thêm targetUserId vào danh sách following của currentUserId
+      batch.update(currentUserDoc, {
+        "following": FieldValue.arrayUnion([targetUserId])
       });
 
-      // Thêm người đang theo dõi vào danh sách following của người dùng
-      await _firestore.collection('Following').doc(currentUserId).collection('following').doc(profileUserId).set({
-        'userId': profileUserId,
-        'createdAt': Timestamp.now(),
+      // Thêm currentUserId vào danh sách followers của targetUserId
+      batch.update(targetUserDoc, {
+        "followers": FieldValue.arrayUnion([currentUserId])
       });
+
+      // Commit batch
+      await batch.commit();
     } catch (e) {
-      print("Lỗi khi follow: $e");
+      throw Exception("Error while following user: $e");
     }
   }
 
-  // Xóa người khỏi danh sách followers
-  Future<void> unfollowUser(String currentUserId, String profileUserId) async {
+  Future<void> unfollowUser(String currentUserId, String targetUserId) async {
     try {
-      // Xóa người khỏi danh sách followers
-      await _firestore.collection('Followers').doc(profileUserId).collection('followers').doc(currentUserId).delete();
+      DocumentReference currentUserDoc =
+          _firestore.collection("Users").doc(currentUserId);
+      DocumentReference targetUserDoc =
+          _firestore.collection("Users").doc(targetUserId);
 
-      // Xóa người khỏi danh sách following
-      await _firestore.collection('Following').doc(currentUserId).collection('following').doc(profileUserId).delete();
+      // Bắt đầu batch để thực hiện các thao tác Firestore cùng lúc
+      WriteBatch batch = _firestore.batch();
+
+      // Xóa targetUserId khỏi danh sách following của currentUserId
+      batch.update(currentUserDoc, {
+        "following": FieldValue.arrayRemove([targetUserId])
+      });
+
+      // Xóa currentUserId khỏi danh sách followers của targetUserId
+      batch.update(targetUserDoc, {
+        "followers": FieldValue.arrayRemove([currentUserId])
+      });
+
+      // Commit batch
+      await batch.commit();
     } catch (e) {
-      print("Lỗi khi unfollow: $e");
+      throw Exception("Error while unfollowing user: $e");
     }
   }
 
-  // Lấy số lượng followers
-  Future<int> followersNum(String userId) async {
-    QuerySnapshot followersSnapshot = await _firestore.collection('Followers').doc(userId).collection('followers').get();
-    return followersSnapshot.docs.length;
-  }
-
-  // Lấy số lượng following
-  Future<int> followingNum(String userId) async {
-    QuerySnapshot followingSnapshot = await _firestore.collection('Following').doc(userId).collection('following').get();
-    return followingSnapshot.docs.length;
+  // Hiển thị số lượng Following và Follower
+  Stream<DocumentSnapshot> getUserStream(String userId) {
+    return _firestore.collection("Users").doc(userId).snapshots();
   }
 }
-

@@ -159,122 +159,126 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ],
       ),
       body: isLoading
-        ? const Center(child: CircularProgressIndicator())
-        : userData == null
-          ? const Center(child: Text('User not found'))
-          : SingleChildScrollView(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                children: [
-                  Stack(
-                    alignment: Alignment.center,
+          ? const Center(child: CircularProgressIndicator())
+          : userData == null
+              ? const Center(child: Text('User not found'))
+              : SingleChildScrollView(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
                     children: [
-                      Container(
-                        height: 210,
-                        decoration: BoxDecoration(
-                          color: Colors.grey[300],
-                          image: userData!['coverUrl'] != null
-                            ? DecorationImage(
-                                image: NetworkImage(userData!['coverUrl']),
-                                fit: BoxFit.cover,
-                              )
-                            : null,
-                        ),
-                      ),
-                      Positioned(
-                        top: 100,
-                        child: CircleAvatar(
-                          radius: 50,
-                          backgroundImage: NetworkImage(
-                            userData!['avatarUrl'] ?? 'https://via.placeholder.com/150',
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 60),
-                  Text(
-                    userData!['name'] ?? 'No Name',
-                    style: const TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    userData!['email'] ?? 'No Email',
-                    style: const TextStyle(fontSize: 16, color: Colors.grey),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    userData!['bio'] ?? 'No Bio',
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.grey[700],
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 20),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Column(
+                      Stack(
+                        alignment: Alignment.center,
                         children: [
-                          Text(
-                            followerCount.toString(),
-                            style: const TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
+                          Container(
+                            height: 210,
+                            decoration: BoxDecoration(
+                              color: Colors.grey[300],
+                              image: userData!['coverUrl'] != null
+                                  ? DecorationImage(
+                                      image:
+                                          NetworkImage(userData!['coverUrl']),
+                                      fit: BoxFit.cover,
+                                    )
+                                  : null,
                             ),
                           ),
-                          const Text('Followers'),
-                        ],
-                      ),
-                      const SizedBox(width: 40),
-                      Column(
-                        children: [
-                          Text(
-                            followingCount.toString(),
-                            style: const TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
+                          Positioned(
+                            top: 100,
+                            child: CircleAvatar(
+                              radius: 50,
+                              backgroundImage: NetworkImage(
+                                userData!['avatarUrl'] ??
+                                    'https://via.placeholder.com/150',
+                              ),
                             ),
                           ),
-                          const Text('Following'),
                         ],
                       ),
+                      const SizedBox(height: 60),
+                      Text(
+                        userData!['name'] ?? 'No Name',
+                        style: const TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        userData!['email'] ?? 'No Email',
+                        style:
+                            const TextStyle(fontSize: 16, color: Colors.grey),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        userData!['bio'] ?? 'No Bio',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.grey[700],
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 20),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Column(
+                            children: [
+                              Text(
+                                followerCount.toString(),
+                                style: const TextStyle(
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              const Text('Followers'),
+                            ],
+                          ),
+                          const SizedBox(width: 40),
+                          Column(
+                            children: [
+                              Text(
+                                followingCount.toString(),
+                                style: const TextStyle(
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              const Text('Following'),
+                            ],
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 20),
+                      if (isCurrentUser)
+                        ElevatedButton.icon(
+                          onPressed: () async {
+                            // Chuyển đến trang EditProfile và cập nhật khi quay lại
+                            final updated = await Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => const EditProfileScreen(),
+                              ),
+                            );
+                            if (updated != null && updated) {
+                              _refreshProfile(); // Cập nhật lại dữ liệu khi quay lại từ trang EditProfile
+                            }
+                          },
+                          icon: const Icon(Icons.edit),
+                          label: const Text('Edit Profile'),
+                        )
+                      else
+                        ElevatedButton.icon(
+                          onPressed: _toggleFollow,
+                          icon: Icon(isFollowing ? Icons.remove : Icons.add),
+                          label: Text(isFollowing ? 'Unfollow' : 'Follow'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor:
+                                isFollowing ? Colors.red : Colors.blue,
+                          ),
+                        ),
                     ],
                   ),
-                  const SizedBox(height: 20),
-                  if (isCurrentUser)
-                    ElevatedButton.icon(
-                      onPressed: () async {
-                        // Chuyển đến trang EditProfile và cập nhật khi quay lại
-                        final updated = await Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const EditProfileScreen(),
-                          ),
-                        );
-                        if (updated != null && updated) {
-                          _refreshProfile(); // Cập nhật lại dữ liệu khi quay lại từ trang EditProfile
-                        }
-                      },
-                      icon: const Icon(Icons.edit),
-                      label: const Text('Edit Profile'),
-                    )
-                  else
-                    ElevatedButton.icon(
-                      onPressed: _toggleFollow,
-                      icon: Icon(isFollowing ? Icons.remove : Icons.add),
-                      label: Text(isFollowing ? 'Unfollow' : 'Follow'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: isFollowing ? Colors.red : Colors.blue,
-                      ),
-                    ),
-                ],
-              ),
-            ),
+                ),
     );
   }
 }
