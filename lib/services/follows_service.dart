@@ -68,6 +68,7 @@ class FollowsService {
     }
   }
 
+  // Kiểm tra trạng thái follow của người dùng
   Future<bool> checkFollowStatus(
       String currentUserId, String profileUserId) async {
     try {
@@ -83,6 +84,7 @@ class FollowsService {
     return false;
   }
 
+  // Thực hiện thao tác follow/unfollow giữa người dùng hiện tại và người dùng khác
   Future<void> toggleFollow(
       String currentUserId, String profileUserId, bool isFollowing) async {
     try {
@@ -108,6 +110,7 @@ class FollowsService {
     }
   }
 
+  // Tải số lượng followers và following của người dùng khác
   Future<Map<String, int>> loadFollowCounts(String profileUserId) async {
     try {
       final followDoc =

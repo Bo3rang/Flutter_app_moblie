@@ -54,6 +54,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
       });
     } catch (e) {
       print("Error loading initial data: $e");
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("An error occurred: $e")),
+      );
+
       setState(() {
         isLoading = false;
       });
@@ -73,12 +78,24 @@ class _ProfileScreenState extends State<ProfileScreen> {
       });
     } catch (e) {
       print("Error toggling follow: $e");
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("An error occurred while toggling follow: $e")),
+      );
     }
   }
 
-  void _logout() {
-    final AuthService auth = AuthService();
-    auth.signOut();
+  void _logout() async {
+    try {
+      final AuthService auth = AuthService();
+      await auth.signOut();
+    } catch (e) {
+      print("Error logging out: $e");
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("An error occurred while logging out: $e")),
+      );
+    }
   }
 
   @override
@@ -97,7 +114,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      // Ảnh bìa
                       Stack(
                         children: [
                           Image.network(
@@ -118,8 +134,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         ],
                       ),
                       const SizedBox(height: 16),
-
-                      // Tên và email
                       Text(
                         userModel!.name,
                         style: const TextStyle(
@@ -134,16 +148,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             const TextStyle(fontSize: 16, color: Colors.grey),
                       ),
                       const SizedBox(height: 16),
-
-                      // Bio
                       Text(
                         userModel!.bio,
                         textAlign: TextAlign.center,
                         style: const TextStyle(fontSize: 16),
                       ),
                       const SizedBox(height: 24),
-
-                      // Số lượng follower và following
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
@@ -171,14 +181,25 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         ],
                       ),
                       const SizedBox(height: 24),
-
-                      // Nút Follow/Unfollow hoặc Edit Profile
                       if (isOwnProfile)
-                        ElevatedButton(
-                          onPressed: () {
-                            Navigator.pushNamed(context, '/edit_profile');
-                          },
-                          child: const Text("Edit Profile"),
+                        Column(
+                          children: [
+                            ElevatedButton(
+                              onPressed: () {
+                                Navigator.pushNamed(context, '/edit_profile');
+                              },
+                              child: const Text("Edit Profile"),
+                            ),
+                            const SizedBox(height: 16),
+                            ElevatedButton.icon(
+                              onPressed: _logout,
+                              icon: const Icon(Icons.logout),
+                              label: const Text("Logout"),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.red,
+                              ),
+                            ),
+                          ],
                         )
                       else
                         Row(
@@ -201,15 +222,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             ),
                           ],
                         ),
-                      const SizedBox(height: 24),
-                      ElevatedButton.icon(
-                        onPressed: _logout,
-                        icon: const Icon(Icons.exit_to_app),
-                        label: const Text("Logout"),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.red,
-                        ),
-                      ),
                     ],
                   ),
                 ),
