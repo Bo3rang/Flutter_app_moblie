@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
+
 import '../../models/user_model.dart';
 import '../../services/auth_service.dart';
+import '../../services/user_service.dart';
+import '../../services/follows_service.dart';
 
 class ProfileScreen extends StatefulWidget {
   final String currentUserId;
@@ -24,100 +26,51 @@ class _ProfileScreenState extends State<ProfileScreen> {
   int followerCount = 0;
   int followingCount = 0;
 
+  final UserService _userService = UserService();
+  final FollowsService _followService = FollowsService();
+
   @override
   void initState() {
     super.initState();
-    _loadUserData();
-    _checkFollowStatus();
-    _loadFollowCounts();
+    _loadInitialData();
   }
 
-  Future<void> _loadUserData() async {
+  Future<void> _loadInitialData() async {
     try {
-      final userDoc = await FirebaseFirestore.instance
-          .collection('Users')
-          .doc(widget.profileUserId)
-          .get();
+      final user = await _userService.getUserData(widget.profileUserId);
+      final followStatus = await _followService.checkFollowStatus(
+        widget.currentUserId,
+        widget.profileUserId,
+      );
+      final followCounts =
+          await _followService.loadFollowCounts(widget.profileUserId);
 
-      if (userDoc.exists) {
-        setState(() {
-          userModel = UserModel.fromMap(userDoc.id, userDoc.data()!);
-        });
-      }
+      setState(() {
+        userModel = user;
+        isFollowing = followStatus;
+        followerCount = followCounts['followers'] ?? 0;
+        followingCount = followCounts['following'] ?? 0;
+        isLoading = false;
+      });
     } catch (e) {
-      print("Error loading user data: $e");
-    } finally {
+      print("Error loading initial data: $e");
       setState(() {
         isLoading = false;
       });
     }
   }
 
-  Future<void> _checkFollowStatus() async {
-    try {
-      final followDoc = await FirebaseFirestore.instance
-          .collection('Follows')
-          .doc(widget.currentUserId)
-          .get();
-
-      if (followDoc.exists) {
-        List<dynamic> following = followDoc['following'] ?? [];
-        setState(() {
-          isFollowing = following.contains(widget.profileUserId);
-        });
-      }
-    } catch (e) {
-      print("Error checking follow status: $e");
-    }
-  }
-
-  Future<void> _loadFollowCounts() async {
-    try {
-      final followDoc = await FirebaseFirestore.instance
-          .collection('Follows')
-          .doc(widget.profileUserId)
-          .get();
-
-      if (followDoc.exists) {
-        setState(() {
-          followerCount = (followDoc['followers'] as List<dynamic>).length;
-          followingCount = (followDoc['following'] as List<dynamic>).length;
-        });
-      }
-    } catch (e) {
-      print("Error loading follow counts: $e");
-    }
-  }
-
   Future<void> _toggleFollow() async {
     try {
-      final followsRef = FirebaseFirestore.instance.collection('Follows');
-
-      if (isFollowing) {
-        await followsRef.doc(widget.currentUserId).update({
-          'following': FieldValue.arrayRemove([widget.profileUserId])
-        });
-        await followsRef.doc(widget.profileUserId).update({
-          'followers': FieldValue.arrayRemove([widget.currentUserId])
-        });
-
-        setState(() {
-          isFollowing = false;
-          followerCount--;
-        });
-      } else {
-        await followsRef.doc(widget.currentUserId).set({
-          'following': FieldValue.arrayUnion([widget.profileUserId])
-        }, SetOptions(merge: true));
-        await followsRef.doc(widget.profileUserId).set({
-          'followers': FieldValue.arrayUnion([widget.currentUserId])
-        }, SetOptions(merge: true));
-
-        setState(() {
-          isFollowing = true;
-          followerCount++;
-        });
-      }
+      await _followService.toggleFollow(
+        widget.currentUserId,
+        widget.profileUserId,
+        isFollowing,
+      );
+      setState(() {
+        isFollowing = !isFollowing;
+        followerCount += isFollowing ? 1 : -1;
+      });
     } catch (e) {
       print("Error toggling follow: $e");
     }
@@ -135,12 +88,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text("Profile"),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.exit_to_app),
-            onPressed: _logout,
-          ),
-        ],
       ),
       body: isLoading
           ? const Center(child: CircularProgressIndicator())
@@ -254,6 +201,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             ),
                           ],
                         ),
+                      const SizedBox(height: 24),
+                      ElevatedButton.icon(
+                        onPressed: _logout,
+                        icon: const Icon(Icons.exit_to_app),
+                        label: const Text("Logout"),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.red,
+                        ),
+                      ),
                     ],
                   ),
                 ),
