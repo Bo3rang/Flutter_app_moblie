@@ -1,7 +1,7 @@
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
-import '/auth/login_or_register.dart';
+import 'login_or_register.dart';
 import '/screens/feed_screen.dart';
 
 class AuthGate extends StatelessWidget {
@@ -11,15 +11,14 @@ class AuthGate extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       body: StreamBuilder<User?>(
-        stream: FirebaseAuth.instance.authStateChanges(), 
-        builder: (context, snapshot){
-          if(snapshot.hasData){
+        stream: FirebaseAuth.instance.authStateChanges(),
+        builder: (context, snapshot) {
+          if (snapshot.hasData) {
             return FeedScreen(
-              currentUserId: snapshot.data!.uid, 
+              currentUserId: snapshot.data!.uid,
               profileUserId: snapshot.data!.uid,
             );
-          }
-          else{
+          } else {
             return const LoginOrRegister();
           }
         },

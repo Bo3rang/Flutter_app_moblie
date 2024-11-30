@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:test_1/screens/profile/edit_profile.dart';
+import '../../models/user_model.dart';
+import '../../services/auth_service.dart';
 
 class ProfileScreen extends StatefulWidget {
   final String currentUserId;
@@ -18,185 +18,163 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
-  bool isCurrentUser = false;
-  Map<String, dynamic>? userData;
-  bool isLoading = true;
+  UserModel? userModel;
   bool isFollowing = false;
+  bool isLoading = true;
   int followerCount = 0;
   int followingCount = 0;
 
   @override
   void initState() {
     super.initState();
-    isCurrentUser = widget.currentUserId == widget.profileUserId;
-    _getUserData();
-    _checkIfFollowing();
+    _loadUserData();
+    _checkFollowStatus();
+    _loadFollowCounts();
   }
 
-  Future<void> _getUserData() async {
+  Future<void> _loadUserData() async {
     try {
-      DocumentSnapshot userSnapshot = await FirebaseFirestore.instance
+      final userDoc = await FirebaseFirestore.instance
           .collection('Users')
           .doc(widget.profileUserId)
           .get();
 
-      if (userSnapshot.exists) {
+      if (userDoc.exists) {
         setState(() {
-          userData = userSnapshot.data() as Map<String, dynamic>?;
-          isLoading = false;
+          userModel = UserModel.fromMap(userDoc.id, userDoc.data()!);
         });
-        _getFollowersAndFollowingCount();
-      } else {
-        setState(() {
-          isLoading = false;
-        });
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('User not found in Firestore')),
-        );
       }
     } catch (e) {
+      print("Error loading user data: $e");
+    } finally {
       setState(() {
         isLoading = false;
       });
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error loading user data: $e')),
-      );
     }
   }
 
-  Future<void> _getFollowersAndFollowingCount() async {
-    final followerSnapshot = await FirebaseFirestore.instance
-        .collection('Users')
-        .doc(widget.profileUserId)
-        .collection('followers')
-        .get();
+  Future<void> _checkFollowStatus() async {
+    try {
+      final followDoc = await FirebaseFirestore.instance
+          .collection('Follows')
+          .doc(widget.currentUserId)
+          .get();
 
-    final followingSnapshot = await FirebaseFirestore.instance
-        .collection('Users')
-        .doc(widget.profileUserId)
-        .collection('following')
-        .get();
-
-    setState(() {
-      followerCount = followerSnapshot.docs.length;
-      followingCount = followingSnapshot.docs.length;
-    });
+      if (followDoc.exists) {
+        List<dynamic> following = followDoc['following'] ?? [];
+        setState(() {
+          isFollowing = following.contains(widget.profileUserId);
+        });
+      }
+    } catch (e) {
+      print("Error checking follow status: $e");
+    }
   }
 
-  Future<void> _checkIfFollowing() async {
-    final doc = await FirebaseFirestore.instance
-        .collection('Users')
-        .doc(widget.profileUserId)
-        .collection('followers')
-        .doc(widget.currentUserId)
-        .get();
+  Future<void> _loadFollowCounts() async {
+    try {
+      final followDoc = await FirebaseFirestore.instance
+          .collection('Follows')
+          .doc(widget.profileUserId)
+          .get();
 
-    setState(() {
-      isFollowing = doc.exists;
-    });
+      if (followDoc.exists) {
+        setState(() {
+          followerCount = (followDoc['followers'] as List<dynamic>).length;
+          followingCount = (followDoc['following'] as List<dynamic>).length;
+        });
+      }
+    } catch (e) {
+      print("Error loading follow counts: $e");
+    }
   }
 
   Future<void> _toggleFollow() async {
-    if (isFollowing) {
-      await FirebaseFirestore.instance
-          .collection('Users')
-          .doc(widget.profileUserId)
-          .collection('followers')
-          .doc(widget.currentUserId)
-          .delete();
+    try {
+      final followsRef = FirebaseFirestore.instance.collection('Follows');
 
-      await FirebaseFirestore.instance
-          .collection('Users')
-          .doc(widget.currentUserId)
-          .collection('following')
-          .doc(widget.profileUserId)
-          .delete();
-      setState(() {
-        isFollowing = false;
-        followerCount--;
-      });
-    } else {
-      await FirebaseFirestore.instance
-          .collection('Users')
-          .doc(widget.profileUserId)
-          .collection('followers')
-          .doc(widget.currentUserId)
-          .set({});
+      if (isFollowing) {
+        await followsRef.doc(widget.currentUserId).update({
+          'following': FieldValue.arrayRemove([widget.profileUserId])
+        });
+        await followsRef.doc(widget.profileUserId).update({
+          'followers': FieldValue.arrayRemove([widget.currentUserId])
+        });
 
-      await FirebaseFirestore.instance
-          .collection('Users')
-          .doc(widget.currentUserId)
-          .collection('following')
-          .doc(widget.profileUserId)
-          .set({});
-      setState(() {
-        isFollowing = true;
-        followerCount++;
-      });
+        setState(() {
+          isFollowing = false;
+          followerCount--;
+        });
+      } else {
+        await followsRef.doc(widget.currentUserId).set({
+          'following': FieldValue.arrayUnion([widget.profileUserId])
+        }, SetOptions(merge: true));
+        await followsRef.doc(widget.profileUserId).set({
+          'followers': FieldValue.arrayUnion([widget.currentUserId])
+        }, SetOptions(merge: true));
+
+        setState(() {
+          isFollowing = true;
+          followerCount++;
+        });
+      }
+    } catch (e) {
+      print("Error toggling follow: $e");
     }
   }
 
-  void _logout() async {
-    await FirebaseAuth.instance.signOut();
-    Navigator.of(context).pushReplacementNamed('/login');
-  }
-
-  // Cập nhật dữ liệu khi quay lại từ EditProfileScreen
-  void _refreshProfile() {
-    _getUserData();
+  void _logout() {
+    final AuthService auth = AuthService();
+    auth.signOut();
   }
 
   @override
   Widget build(BuildContext context) {
+    final bool isOwnProfile = widget.currentUserId == widget.profileUserId;
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Profile'),
+        title: const Text("Profile"),
         actions: [
           IconButton(
-            icon: const Icon(Icons.logout),
+            icon: const Icon(Icons.exit_to_app),
             onPressed: _logout,
           ),
         ],
       ),
       body: isLoading
           ? const Center(child: CircularProgressIndicator())
-          : userData == null
-              ? const Center(child: Text('User not found'))
+          : userModel == null
+              ? const Center(child: Text("User not found"))
               : SingleChildScrollView(
-                  padding: const EdgeInsets.all(16.0),
                   child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
+                      // Ảnh bìa
                       Stack(
-                        alignment: Alignment.center,
                         children: [
-                          Container(
-                            height: 210,
-                            decoration: BoxDecoration(
-                              color: Colors.grey[300],
-                              image: userData!['coverUrl'] != null
-                                  ? DecorationImage(
-                                      image:
-                                          NetworkImage(userData!['coverUrl']),
-                                      fit: BoxFit.cover,
-                                    )
-                                  : null,
-                            ),
+                          Image.network(
+                            userModel!.coverUrl,
+                            height: 200,
+                            width: double.infinity,
+                            fit: BoxFit.cover,
                           ),
                           Positioned(
-                            top: 100,
+                            bottom: 16,
+                            left: 16,
                             child: CircleAvatar(
                               radius: 50,
-                              backgroundImage: NetworkImage(
-                                userData!['avatarUrl'] ??
-                                    'https://via.placeholder.com/150',
-                              ),
+                              backgroundImage:
+                                  NetworkImage(userModel!.avatarUrl),
                             ),
                           ),
                         ],
                       ),
-                      const SizedBox(height: 60),
+                      const SizedBox(height: 16),
+
+                      // Tên và email
                       Text(
-                        userData!['name'] ?? 'No Name',
+                        userModel!.name,
                         style: const TextStyle(
                           fontSize: 24,
                           fontWeight: FontWeight.bold,
@@ -204,77 +182,77 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        userData!['email'] ?? 'No Email',
+                        userModel!.email,
                         style:
                             const TextStyle(fontSize: 16, color: Colors.grey),
                       ),
-                      const SizedBox(height: 8),
+                      const SizedBox(height: 16),
+
+                      // Bio
                       Text(
-                        userData!['bio'] ?? 'No Bio',
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Colors.grey[700],
-                        ),
+                        userModel!.bio,
                         textAlign: TextAlign.center,
+                        style: const TextStyle(fontSize: 16),
                       ),
-                      const SizedBox(height: 20),
+                      const SizedBox(height: 24),
+
+                      // Số lượng follower và following
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Column(
                             children: [
                               Text(
-                                followerCount.toString(),
+                                '$followerCount',
                                 style: const TextStyle(
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.bold,
-                                ),
+                                    fontSize: 20, fontWeight: FontWeight.bold),
                               ),
-                              const Text('Followers'),
+                              const Text("Followers"),
                             ],
                           ),
-                          const SizedBox(width: 40),
+                          const SizedBox(width: 32),
                           Column(
                             children: [
                               Text(
-                                followingCount.toString(),
+                                '$followingCount',
                                 style: const TextStyle(
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.bold,
-                                ),
+                                    fontSize: 20, fontWeight: FontWeight.bold),
                               ),
-                              const Text('Following'),
+                              const Text("Following"),
                             ],
                           ),
                         ],
                       ),
-                      const SizedBox(height: 20),
-                      if (isCurrentUser)
-                        ElevatedButton.icon(
-                          onPressed: () async {
-                            // Chuyển đến trang EditProfile và cập nhật khi quay lại
-                            final updated = await Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => const EditProfileScreen(),
-                              ),
-                            );
-                            if (updated != null && updated) {
-                              _refreshProfile(); // Cập nhật lại dữ liệu khi quay lại từ trang EditProfile
-                            }
+                      const SizedBox(height: 24),
+
+                      // Nút Follow/Unfollow hoặc Edit Profile
+                      if (isOwnProfile)
+                        ElevatedButton(
+                          onPressed: () {
+                            Navigator.pushNamed(context, '/edit_profile');
                           },
-                          icon: const Icon(Icons.edit),
-                          label: const Text('Edit Profile'),
+                          child: const Text("Edit Profile"),
                         )
                       else
-                        ElevatedButton.icon(
-                          onPressed: _toggleFollow,
-                          icon: Icon(isFollowing ? Icons.remove : Icons.add),
-                          label: Text(isFollowing ? 'Unfollow' : 'Follow'),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor:
-                                isFollowing ? Colors.red : Colors.blue,
-                          ),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            ElevatedButton(
+                              onPressed: _toggleFollow,
+                              child: Text(isFollowing ? "Unfollow" : "Follow"),
+                            ),
+                            const SizedBox(width: 10),
+                            ElevatedButton(
+                              onPressed: () {
+                                Navigator.pushNamed(
+                                  context,
+                                  '/messenger',
+                                  arguments: userModel,
+                                );
+                              },
+                              child: const Text("Messenger"),
+                            ),
+                          ],
                         ),
                     ],
                   ),

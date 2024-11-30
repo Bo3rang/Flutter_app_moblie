@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 
-import '/auth/auth_service.dart';
+import '../services/auth_service.dart';
 import '/components/my_button.dart';
 import '/components/my_textfield.dart';
 
 class RegisterScreen extends StatelessWidget {
   RegisterScreen({
-    super.key, 
+    super.key,
     required this.onTap,
   });
 
@@ -15,7 +15,8 @@ class RegisterScreen extends StatelessWidget {
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
-  final TextEditingController _confirmpasswordController = TextEditingController();
+  final TextEditingController _confirmpasswordController =
+      TextEditingController();
   final TextEditingController _avatarUrlController = TextEditingController();
   final TextEditingController _coverUrlController = TextEditingController();
   final TextEditingController _bioController = TextEditingController();
@@ -25,27 +26,26 @@ class RegisterScreen extends StatelessWidget {
     if (_passwordController.text == _confirmpasswordController.text) {
       try {
         await auth.signUpWithEmailPassword(
-          _emailController.text,
-          _passwordController.text,
-          _nameController.text,
-          _avatarUrlController.text,
-          _bioController.text,
-          _coverUrlController.text
-        );
+            _emailController.text,
+            _passwordController.text,
+            _nameController.text,
+            _avatarUrlController.text,
+            _bioController.text,
+            _coverUrlController.text);
       } catch (e) {
         showDialog(
           context: context,
           builder: ((context) => AlertDialog(
-            title: Text(e.toString()),
-          )),
+                title: Text(e.toString()),
+              )),
         );
       }
     } else {
       showDialog(
           context: context,
           builder: ((context) => const AlertDialog(
-            title: Text("Password don't match!"),
-          )));
+                title: Text("Password don't match!"),
+              )));
     }
   }
 
