@@ -30,12 +30,13 @@ class UserService {
       // Truy vấn tất cả các bài viết từ collection 'Posts', sắp xếp theo thời gian giảm dần
       final postsSnapshot = await _firestore
           .collection('Posts')
-          .orderBy('timestamp', descending: true)
+          .orderBy('createdAt', descending: true)
           .get();
 
-      // Chuyển đổi dữ liệu Firestore thành danh sách PostModel và trả về
+      // Chuyển đổi dữ liệu Firestore thành danh sách Post và trả về
       return postsSnapshot.docs
-          .map((doc) => PostModel.fromFirestore(doc))
+          .map((doc) => PostModel.fromJson(
+              doc.data() as Map<String, dynamic>)) // Chuyển từ Map sang Post
           .toList();
     } catch (e) {
       print("Error getting posts: $e");

@@ -26,7 +26,7 @@ class PostService {
       return imageUrl;
     } catch (e) {
       print("Error uploading image: $e");
-      return null; // Có thể ném lỗi chi tiết hoặc log để xử lý
+      return null;
     }
   }
 
@@ -35,20 +35,23 @@ class PostService {
     String title,
     String content,
     String? imageUrl,
-    String userId, // Thêm tham số userId
+    String author,
   ) async {
     try {
       final newPost = PostModel(
         id: '',
         title: title,
         content: content,
-        imageUrl: imageUrl,
-        timestamp: Timestamp.now(),
-        userId: userId,
+        author: author,
+        createdAt: DateTime.now(),
+        imageUrl: imageUrl ?? '',
+        tags: [],
+        likeCount: 0,
+        commentCount: 0,
       );
 
       // Lưu bài viết vào Firestore
-      await _firestore.collection('Posts').add(newPost.toMap());
+      await _firestore.collection('Posts').add(newPost.toJson());
       print("Post added successfully!");
     } catch (e) {
       print("Error posting article: $e");
@@ -61,15 +64,14 @@ class PostService {
     try {
       final querySnapshot = await _firestore
           .collection('Posts')
-          .orderBy('timestamp', descending: true)
+          .orderBy('createdAt', descending: true)
           .get();
       return querySnapshot.docs
-          .map((doc) =>
-              PostModel.fromFirestore(doc)) // Chuyển docs thành PostModel
+          .map((doc) => PostModel.fromJson(doc.data() as Map<String, dynamic>))
           .toList();
     } catch (e) {
       print("Error getting posts: $e");
-      rethrow; // Ném lại lỗi để có thể xử lý tại nơi gọi
+      rethrow;
     }
   }
 }

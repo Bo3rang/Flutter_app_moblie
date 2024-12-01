@@ -40,6 +40,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Future<void> _loadInitialData() async {
     try {
+      // Lấy dữ liệu người dùng
       final user = await _userService.getUserData(widget.profileUserId);
       final followStatus = await _followService.checkFollowStatus(
         widget.currentUserId,
@@ -48,7 +49,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       final followCounts =
           await _followService.loadFollowCounts(widget.profileUserId);
 
-      // Lấy các bài viết của người dùng
+      // Lấy bài viết của người dùng đang xem profile (theo ID profileUserId)
       final posts = await _userService.getPosts();
 
       setState(() {
@@ -56,16 +57,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
         isFollowing = followStatus;
         followerCount = followCounts['followers'] ?? 0;
         followingCount = followCounts['following'] ?? 0;
-        userPosts = posts; // Cập nhật danh sách bài viết
+        userPosts =
+            posts.where((post) => post.author == widget.profileUserId).toList();
         isLoading = false;
       });
     } catch (e) {
       print("Error loading initial data: $e");
-
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text("An error occurred: $e")),
       );
-
       setState(() {
         isLoading = false;
       });
@@ -85,7 +85,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
       });
     } catch (e) {
       print("Error toggling follow: $e");
-
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text("An error occurred while toggling follow: $e")),
       );
@@ -98,7 +97,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
       await auth.signOut();
     } catch (e) {
       print("Error logging out: $e");
-
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text("An error occurred while logging out: $e")),
       );
@@ -127,14 +125,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           Image.network(
                             userModel?.coverUrl.isNotEmpty == true
                                 ? userModel!.coverUrl
-                                : 'https://via.placeholder.com/600x200', // Đường dẫn ảnh mặc định
+                                : 'https://via.placeholder.com/600x200',
                             height: 200,
                             width: double.infinity,
                             fit: BoxFit.cover,
                             errorBuilder: (context, error, stackTrace) {
                               return Container(
                                 height: 200,
-                                width: double.infinity,
                                 color: Colors.grey,
                                 child: const Center(
                                   child: Icon(Icons.image_not_supported,
@@ -264,21 +261,71 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           ],
                         ),
 
-                      // Hiển thị bài viết của người dùng
+                      // Hiển thị bài viết của người dùng hiện tại
                       const SizedBox(height: 32),
                       const Text(
-                        "Posts",
+                        "User Posts",
                         style: TextStyle(
                             fontSize: 20, fontWeight: FontWeight.bold),
                       ),
                       const SizedBox(height: 8),
                       // Hiển thị danh sách bài viết
                       ...userPosts.map((post) {
-                        return ListTile(
-                          title: Text(post.title),
-                          subtitle: Text(post.content),
+                        return Card(
+                          margin: const EdgeInsets.symmetric(
+                              horizontal: 16, vertical: 8),
+                          child: ListTile(
+                            contentPadding: const EdgeInsets.all(8),
+                            title: Text(post.title),
+                            subtitle: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const SizedBox(height: 4),
+                                Text(post.content),
+                                const SizedBox(height: 8),
+                                if (post.imageUrl.isNotEmpty)
+                                  Image.network(
+                                    post.imageUrl,
+                                    fit: BoxFit.cover,
+                                    height: 150,
+                                    width: double.infinity,
+                                    errorBuilder: (context, error, stackTrace) {
+                                      return Container(
+                                        height: 150,
+                                        color: Colors.grey,
+                                        child: const Center(
+                                          child: Icon(Icons.image_not_supported,
+                                              size: 50, color: Colors.white),
+                                        ),
+                                      );
+                                    },
+                                  ),
+                                const SizedBox(height: 8),
+                                Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Row(
+                                      children: [
+                                        const Icon(Icons.thumb_up, size: 16),
+                                        const SizedBox(width: 4),
+                                        Text('${post.likeCount} Likes'),
+                                      ],
+                                    ),
+                                    Row(
+                                      children: [
+                                        const Icon(Icons.comment, size: 16),
+                                        const SizedBox(width: 4),
+                                        Text('${post.commentCount} Comments'),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
                         );
-                      }).toList(),
+                      }),
                     ],
                   ),
                 ),

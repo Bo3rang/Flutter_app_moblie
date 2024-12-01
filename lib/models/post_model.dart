@@ -1,43 +1,51 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-
 class PostModel {
   final String id;
   final String title;
-  final String userId;
   final String content;
-  final String? imageUrl;
-  final Timestamp timestamp;
+  final String author;
+  final DateTime createdAt;
+  final List<String> tags;
+  final int likeCount;
+  final int commentCount;
+  final String imageUrl;
 
   PostModel({
-    this.imageUrl,
     required this.id,
     required this.title,
-    required this.userId,
     required this.content,
-    required this.timestamp,
+    required this.author,
+    required this.createdAt,
+    this.tags = const [],
+    this.likeCount = 0,
+    this.commentCount = 0,
+    required this.imageUrl,
   });
 
-  // Hàm chuyển từ Firestore sang PostModel
-  factory PostModel.fromFirestore(DocumentSnapshot doc) {
-    final data = doc.data() as Map<String, dynamic>;
+  factory PostModel.fromJson(Map<String, dynamic> json) {
     return PostModel(
-      id: doc.id,
-      title: data['title'] ?? '',
-      content: data['content'] ?? '',
-      imageUrl: data['imageUrl'],
-      timestamp: data['timestamp'] ?? Timestamp.now(),
-      userId: data['userId'] ?? '',
+      id: json['id'],
+      title: json['title'],
+      content: json['content'],
+      author: json['author'],
+      createdAt: DateTime.parse(json['createdAt']),
+      tags: List<String>.from(json['tags']),
+      likeCount: json['likeCount'],
+      commentCount: json['commentCount'],
+      imageUrl: json['imageUrl'],
     );
   }
 
-  // Hàm chuyển từ PostModel sang Map để lưu vào Firestore
-  Map<String, dynamic> toMap() {
+  Map<String, dynamic> toJson() {
     return {
+      'id': id,
       'title': title,
-      'userId': userId,
       'content': content,
+      'author': author,
+      'createdAt': createdAt.toIso8601String(),
+      'tags': tags,
+      'likeCount': likeCount,
+      'commentCount': commentCount,
       'imageUrl': imageUrl,
-      'timestamp': timestamp,
     };
   }
 }
