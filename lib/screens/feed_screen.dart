@@ -25,7 +25,7 @@ class _FeedScreenState extends State<FeedScreen> {
     return Scaffold(
       backgroundColor: Colors.blue,
       body: [
-        const HomeScreen(),
+        HomeScreen(currentUserId: widget.currentUserId),
         SearchScreen(currentUserId: widget.currentUserId),
         const NotificationScreen(),
         ProfileScreen(

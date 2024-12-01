@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 
+import 'edit_profile.dart';
 import '../../models/user_model.dart';
+import '../../models/post_model.dart';
 import '../../services/auth_service.dart';
 import '../../services/user_service.dart';
 import '../../services/follows_service.dart';
-import 'edit_profile.dart';
 
 class ProfileScreen extends StatefulWidget {
   final String currentUserId;
@@ -26,6 +27,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   bool isLoading = true;
   int followerCount = 0;
   int followingCount = 0;
+  List<PostModel> userPosts = [];
 
   final UserService _userService = UserService();
   final FollowsService _followService = FollowsService();
@@ -46,11 +48,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
       final followCounts =
           await _followService.loadFollowCounts(widget.profileUserId);
 
+      // Lấy các bài viết của người dùng
+      final posts = await _userService.getPosts();
+
       setState(() {
         userModel = user;
         isFollowing = followStatus;
         followerCount = followCounts['followers'] ?? 0;
         followingCount = followCounts['following'] ?? 0;
+        userPosts = posts; // Cập nhật danh sách bài viết
         isLoading = false;
       });
     } catch (e) {
@@ -115,6 +121,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
+                      // Ảnh cover và avatar
                       Stack(
                         children: [
                           Image.network(
@@ -256,6 +263,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             ),
                           ],
                         ),
+
+                      // Hiển thị bài viết của người dùng
+                      const SizedBox(height: 32),
+                      const Text(
+                        "Posts",
+                        style: TextStyle(
+                            fontSize: 20, fontWeight: FontWeight.bold),
+                      ),
+                      const SizedBox(height: 8),
+                      // Hiển thị danh sách bài viết
+                      ...userPosts.map((post) {
+                        return ListTile(
+                          title: Text(post.title),
+                          subtitle: Text(post.content),
+                        );
+                      }).toList(),
                     ],
                   ),
                 ),
