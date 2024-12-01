@@ -4,6 +4,7 @@ import '../../models/user_model.dart';
 import '../../services/auth_service.dart';
 import '../../services/user_service.dart';
 import '../../services/follows_service.dart';
+import 'edit_profile.dart';
 
 class ProfileScreen extends StatefulWidget {
   final String currentUserId;
@@ -117,10 +118,23 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       Stack(
                         children: [
                           Image.network(
-                            userModel!.coverUrl,
+                            userModel?.coverUrl.isNotEmpty == true
+                                ? userModel!.coverUrl
+                                : 'https://via.placeholder.com/600x200', // Đường dẫn ảnh mặc định
                             height: 200,
                             width: double.infinity,
                             fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) {
+                              return Container(
+                                height: 200,
+                                width: double.infinity,
+                                color: Colors.grey,
+                                child: const Center(
+                                  child: Icon(Icons.image_not_supported,
+                                      size: 50, color: Colors.white),
+                                ),
+                              );
+                            },
                           ),
                           Positioned(
                             bottom: 16,
@@ -128,7 +142,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             child: CircleAvatar(
                               radius: 50,
                               backgroundImage:
-                                  NetworkImage(userModel!.avatarUrl),
+                                  userModel?.avatarUrl.isNotEmpty == true
+                                      ? NetworkImage(userModel!.avatarUrl)
+                                      : const NetworkImage(
+                                          'https://via.placeholder.com/100'),
+                              onBackgroundImageError: (_, __) {},
+                              child: userModel?.avatarUrl.isEmpty == true
+                                  ? const Icon(Icons.person,
+                                      size: 50, color: Colors.white)
+                                  : null,
                             ),
                           ),
                         ],
@@ -185,8 +207,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         Column(
                           children: [
                             ElevatedButton(
-                              onPressed: () {
-                                Navigator.pushNamed(context, '/edit_profile');
+                              onPressed: () async {
+                                final result = await Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) =>
+                                        const EditProfileScreen(),
+                                  ),
+                                );
+                                if (result == true) {
+                                  setState(() {
+                                    isLoading = true;
+                                  });
+                                  _loadInitialData();
+                                }
                               },
                               child: const Text("Edit Profile"),
                             ),
