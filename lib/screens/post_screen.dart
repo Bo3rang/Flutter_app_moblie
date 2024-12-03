@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-
+import '../models/post_model.dart';
 import '../services/post_service.dart';
 
 class PostScreen extends StatefulWidget {
@@ -26,8 +26,8 @@ class _PostScreenState extends State<PostScreen> {
   Future<void> _pickImage() async {
     final pickedFile = await _picker.pickImage(source: ImageSource.gallery);
     if (pickedFile != null) {
-      // Tải ảnh lên Firebase Storage
-      final imageUrl = await _postService.uploadImage(pickedFile);
+      // Tải ảnh lên Firebase Storage và nhận URL
+      final imageUrl = await _postService.uploadImage(pickedFile as PickedFile);
       if (imageUrl != null) {
         setState(() {
           _imageUrl = imageUrl;
@@ -43,13 +43,23 @@ class _PostScreenState extends State<PostScreen> {
 
     if (title.isNotEmpty && content.isNotEmpty) {
       try {
-        // Lưu bài viết vào Firestore kèm theo userId
-        await _postService.createPost(
-          title,
-          content,
-          _imageUrl,
-          widget.currentUserId,
+        // Tạo một đối tượng PostModel
+        final post = PostModel(
+          id: DateTime.now()
+              .millisecondsSinceEpoch
+              .toString(), // Tạo ID duy nhất từ thời gian
+          userId: widget.currentUserId,
+          content: content,
+          images: _imageUrl != null ? [_imageUrl!] : [],
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+          isLiked: false,
+          likeCount: 0,
+          commentCount: 0,
         );
+
+        // Lưu bài viết vào Firestore
+        await _postService.addPost(post);
 
         // Hiển thị thông báo thành công
         ScaffoldMessenger.of(context).showSnackBar(

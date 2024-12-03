@@ -49,16 +49,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
       final followCounts =
           await _followService.loadFollowCounts(widget.profileUserId);
 
-      // Lấy bài viết của người dùng đang xem profile (theo ID profileUserId)
-      final posts = await _userService.getPosts();
-
       setState(() {
         userModel = user;
         isFollowing = followStatus;
         followerCount = followCounts['followers'] ?? 0;
         followingCount = followCounts['following'] ?? 0;
-        userPosts =
-            posts.where((post) => post.author == widget.profileUserId).toList();
         isLoading = false;
       });
     } catch (e) {
@@ -283,9 +278,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 const SizedBox(height: 4),
                                 Text(post.content),
                                 const SizedBox(height: 8),
-                                if (post.imageUrl.isNotEmpty)
+                                if (post.imageUrl != null &&
+                                    post.imageUrl!.isNotEmpty)
                                   Image.network(
-                                    post.imageUrl,
+                                    post.imageUrl!,
                                     fit: BoxFit.cover,
                                     height: 150,
                                     width: double.infinity,
@@ -301,22 +297,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                     },
                                   ),
                                 const SizedBox(height: 8),
-                                Row(
+                                const Row(
                                   mainAxisAlignment:
                                       MainAxisAlignment.spaceBetween,
                                   children: [
                                     Row(
                                       children: [
-                                        const Icon(Icons.thumb_up, size: 16),
-                                        const SizedBox(width: 4),
-                                        Text('${post.likeCount} Likes'),
+                                        Icon(Icons.thumb_up, size: 16),
+                                        SizedBox(width: 4),
                                       ],
                                     ),
                                     Row(
                                       children: [
-                                        const Icon(Icons.comment, size: 16),
-                                        const SizedBox(width: 4),
-                                        Text('${post.commentCount} Comments'),
+                                        Icon(Icons.comment, size: 16),
+                                        SizedBox(width: 4),
                                       ],
                                     ),
                                   ],

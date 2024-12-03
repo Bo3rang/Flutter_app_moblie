@@ -28,7 +28,11 @@ class _HomeScreenState extends State<HomeScreen> {
     _loadAllPosts();
   }
 
+  // Tải bài viết từ Firestore
   Future<void> _loadAllPosts() async {
+    setState(() {
+      isLoading = true;
+    });
     try {
       final posts = await _postService.getPosts();
       setState(() {
@@ -44,6 +48,16 @@ class _HomeScreenState extends State<HomeScreen> {
         isLoading = false;
       });
     }
+  }
+
+  // Hàm để toggle like status của bài viết
+  void _toggleLike(PostModel post) async {
+    final updatedPost = post.toggleLike();
+    await _postService.updatePost(updatedPost);
+    setState(() {
+      final index = allPosts.indexOf(post);
+      allPosts[index] = updatedPost;
+    });
   }
 
   @override
@@ -64,16 +78,14 @@ class _HomeScreenState extends State<HomeScreen> {
                       margin: const EdgeInsets.symmetric(
                           horizontal: 16, vertical: 8),
                       child: ListTile(
-                        title: Text(post.title),
+                        title: Text(post.content),
                         subtitle: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             const SizedBox(height: 4),
-                            Text(post.content),
-                            const SizedBox(height: 8),
-                            if (post.imageUrl.isNotEmpty)
+                            if (post.images.isNotEmpty)
                               Image.network(
-                                post.imageUrl,
+                                post.images.first,
                                 fit: BoxFit.cover,
                                 height: 150,
                                 width: double.infinity,
@@ -90,22 +102,32 @@ class _HomeScreenState extends State<HomeScreen> {
                               ),
                             const SizedBox(height: 8),
                             Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                const Icon(Icons.thumb_up_alt, size: 16),
-                                const SizedBox(width: 4),
-                                Text("${post.likeCount} Likes"),
-                                const SizedBox(width: 16),
-                                const Icon(Icons.comment, size: 16),
-                                const SizedBox(width: 4),
-                                Text("${post.commentCount} Comments"),
+                                Row(
+                                  children: [
+                                    IconButton(
+                                      icon: Icon(
+                                        post.isLiked
+                                            ? Icons.thumb_up
+                                            : Icons.thumb_up_alt_outlined,
+                                        size: 16,
+                                        color: post.isLiked
+                                            ? Colors.blue
+                                            : Colors.black,
+                                      ),
+                                      onPressed: () => _toggleLike(post),
+                                    ),
+                                    Text('${post.likeCount}'),
+                                  ],
+                                ),
+                                Text(
+                                  "${post.commentCount} comments",
+                                  style: const TextStyle(color: Colors.grey),
+                                ),
                               ],
                             ),
                             const SizedBox(height: 8),
-                            Text(
-                              "Posted by: ${post.author}",
-                              style: const TextStyle(color: Colors.grey),
-                            ),
-                            const SizedBox(height: 4),
                             Text(
                               "Posted on: ${post.createdAt.toLocal().toString().split(' ')[0]}",
                               style: const TextStyle(color: Colors.grey),

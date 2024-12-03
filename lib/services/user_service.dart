@@ -1,5 +1,4 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-
 import '../models/post_model.dart';
 import '../../models/user_model.dart';
 
@@ -20,27 +19,28 @@ class UserService {
       }
     } catch (e) {
       print("Error loading user data: $e");
+      throw Exception("Error loading user data: $e");
     }
     return null;
   }
 
-  // Lấy danh sách các bài post từ Firestore
-  Future<List<PostModel>> getPosts() async {
+  // Lấy danh sách các bài post của người dùng từ Firestore theo userId
+  Future<List<PostModel>> getPosts(String userId) async {
     try {
-      // Truy vấn tất cả các bài viết từ collection 'Posts', sắp xếp theo thời gian giảm dần
       final postsSnapshot = await _firestore
           .collection('Posts')
-          .orderBy('createdAt', descending: true)
+          .where('userId', isEqualTo: userId) // Lọc bài viết theo userId
+          .orderBy('timestamp', descending: true)
           .get();
 
       // Chuyển đổi dữ liệu Firestore thành danh sách Post và trả về
-      return postsSnapshot.docs
-          .map((doc) => PostModel.fromJson(
-              doc.data() as Map<String, dynamic>)) // Chuyển từ Map sang Post
-          .toList();
+      return postsSnapshot.docs.map((doc) {
+        return PostModel.fromJson(doc.data() as Map<String,
+            dynamic>); // Sử dụng PostModel.fromJson() thay cho PostModel.fromFirestore()
+      }).toList();
     } catch (e) {
       print("Error getting posts: $e");
-      throw Exception("Error getting posts: $e"); // Trả về lỗi chi tiết hơn
+      throw Exception("Error getting posts: $e");
     }
   }
 }
